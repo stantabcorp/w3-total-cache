@@ -38,6 +38,13 @@ class CdnEngine_S3_Compatible extends CdnEngine_Base {
 		parent::__construct( $config );
 	}
 
+	function _remote_path($path){
+		if(defined("W3TC_REMOTE_PREFIX")){
+			return rtrim(W3TC_REMOTE_PREFIX, "/") . "/" . ltrim($path, "/");
+		}
+		return $path;
+	}
+
 	/**
 	 * Formats URL
 	 *
@@ -52,7 +59,7 @@ class CdnEngine_S3_Compatible extends CdnEngine_Base {
 
 			// it does not support '+', requires '%2B'
 			$path = str_replace( '+', '%2B', $path );
-			$url = sprintf( '%s://%s/%s', $scheme, $domain, $path );
+			$url = sprintf( '%s://%s/%s', $scheme, $domain, $this->_remote_path($path) );
 
 			return $url;
 		}
@@ -104,7 +111,7 @@ class CdnEngine_S3_Compatible extends CdnEngine_Base {
 	 */
 	function _upload( $file, $force_rewrite = false ) {
 		$local_path = $file['local_path'];
-		$remote_path = $file['remote_path'];
+		$remote_path = $this->_remote_path($file['remote_path']);
 
 		if ( !file_exists( $local_path ) ) {
 			return $this->_get_result( $local_path, $remote_path,
@@ -157,7 +164,7 @@ class CdnEngine_S3_Compatible extends CdnEngine_Base {
 	 */
 	function _upload_gzip( $file, $force_rewrite = false ) {
 		$local_path = $file['local_path'];
-		$remote_path = $file['remote_path_gzip'];
+		$remote_path = $this->_remote_path($file['remote_path_gzip']);
 
 		if ( !function_exists( 'gzencode' ) )
 			return $this->_get_result( $local_path, $remote_path,
@@ -223,7 +230,7 @@ class CdnEngine_S3_Compatible extends CdnEngine_Base {
 
 		foreach ( $files as $file ) {
 			$local_path = $file['local_path'];
-			$remote_path = $file['remote_path'];
+			$remote_path = $this->_remote_path($file['remote_path']);
 
 			$this->_set_error_handler();
 			$result = @$this->_s3->deleteObject( $this->_config['bucket'],
